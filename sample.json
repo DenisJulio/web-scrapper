@@ -1,0 +1,21 @@
+{
+  "legenda": {
+    "mfr": "mercado fraco",
+    "me": "mercado estavel",
+    "mfi": "mercado firme"
+  },
+  "boletin-diario-completo": {
+    "mercado": "ceasa-mg gv",
+    "data": "2024-12-27",
+    "cotacoes": [
+      {
+        "produto": "abacate",
+        "embalagem": "cx 20 kg",
+        "preco-minimo": 0.5,
+        "preco-comum": 1.0,
+        "preco-maximo": 1.5,
+        "situacao": "mfi"
+      }
+    ]
+  }
+}

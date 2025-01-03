@@ -3,55 +3,108 @@
  */
 package org.example;
 
+import java.time.Duration;
+import java.util.ArrayList;
+
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class App {
 
-    private static final String FIRST_SELECT_EL_ID = "id_sc_field_mercado";
-    private static final String SECOND_SELECT_EL_ID = "id_sc_field_datas";
-    private static final String SUBMIT_BUTTON = "sc_bbtboletim_bot";
-    private static Logger log = LoggerFactory.getLogger(App.class);
+	private static final String FIRST_SELECT_EL_ID = "id_sc_field_mercado";
+	private static final String SECOND_SELECT_EL_ID = "id_sc_field_datas";
+	private static final String SUBMIT_BUTTON = "sc_bbtboletim_bot";
+	private static Logger log = LoggerFactory.getLogger(App.class);
+	private static ObjectMapper mapper = new ObjectMapper();
 
-    public static void main(String[] args) {
-        var chromeOptions = new ChromeOptions();
-        chromeOptions.setBinary("/usr/bin/google-chrome-stable");
-        chromeOptions.addArguments("--headless"); // Add this line
-        chromeOptions.addArguments("--disable-gpu");
-        var driver = new ChromeDriver(chromeOptions);
-        var page = "http://minas1.ceasa.mg.gov.br/detec/filtro_boletim/filtro_boletim.php";
-        log.info("Fetching page: {}", page);
-        driver.get(page);
-        log.info("Page title: {}", driver.getTitle());
-        var first_el = driver.findElement(By.id(FIRST_SELECT_EL_ID));
-        log.info("Found a \"{}\" element with the id=\"{}\"", first_el.getTagName(), FIRST_SELECT_EL_ID);
-        var first_select = new Select(first_el);
-        var options = first_select
-                .getOptions()
-                .stream()
-                // .map(WebElement::getText)
-                .map(o -> o.getDomProperty("value"))
-                .toList();
-        log.info("List of options obtained from the first select element: {}", options);
-        first_select.selectByVisibleText("Gov. Valadares - CEARD");
-        var second_el = driver.findElement(By.id(SECOND_SELECT_EL_ID));
-        log.info("Found a \"{}\" element with the id=\"{}\"", second_el.getTagName(), SECOND_SELECT_EL_ID);
-        var secondSelect = new Select(second_el);
-        log.info("The list of available dates to select from in the second select element is {}",
-                secondSelect.getOptions().size());
-        var dateToSelect = "27/12/2024";
-        secondSelect.selectByVisibleText(dateToSelect);
-        log.info("Selected the value for the second element: \"{}\"", dateToSelect);
-        var submitButton = driver.findElement(By.id(SUBMIT_BUTTON));
-        log.info("Found a \"{}\" element with the id=\"{}\"", submitButton.getTagName(), SUBMIT_BUTTON);
-        submitButton.click();
-        log.info("Clicked the submit button");
-        log.info("Currently at page \"{}\"", driver.getTitle());
-        driver.quit();
-    }
+	public static void main(String[] args) {
+		var chromeOptions = new ChromeOptions();
+		chromeOptions.setBinary("/usr/bin/google-chrome-stable");
+		chromeOptions.addArguments("--headless"); // Add this line
+		chromeOptions.addArguments("--disable-gpu");
+		var driver = new ChromeDriver(chromeOptions);
+		var wait = new WebDriverWait(driver, Duration.ofSeconds(5));
+		var page = "http://minas1.ceasa.mg.gov.br/detec/filtro_boletim/filtro_boletim.php";
+		log.info("Fetching page: {}", page);
+		driver.get(page);
+		log.info("Page title: {}", driver.getTitle());
+		var first_el = driver.findElement(By.id(FIRST_SELECT_EL_ID));
+		log.info("Found a \"{}\" element with the id=\"{}\"", first_el.getTagName(),
+				FIRST_SELECT_EL_ID);
+		var first_select = new Select(first_el);
+		var options = first_select
+				.getOptions()
+				.stream()
+				.map(o -> o.getDomProperty("value"))
+				.toList();
+		log.info("List of options obtained from the first select element: {}", options);
+		first_select.selectByVisibleText("Gov. Valadares - CEARD");
+		var second_el = driver.findElement(By.id(SECOND_SELECT_EL_ID));
+		log.info("Found a \"{}\" element with the id=\"{}\"", second_el.getTagName(),
+				SECOND_SELECT_EL_ID);
+		var secondSelect = new Select(second_el);
+		log.info("The list of available dates to select from in the second select element is {}",
+				secondSelect.getOptions().size());
+		var dateToSelect = "27/12/2024";
+		secondSelect.selectByVisibleText(dateToSelect);
+		log.info("Selected the value for the second element: \"{}\"", dateToSelect);
+		var submitButton = driver.findElement(By.id(SUBMIT_BUTTON));
+		log.info("Found a \"{}\" element with the id=\"{}\"", submitButton.getTagName(),
+				SUBMIT_BUTTON);
+		submitButton.click();
+		log.info("Clicked the submit button");
+
+		wait.until(ExpectedConditions.titleContains("Data"));
+
+		log.info("Currently at page \"{}\"", driver.getTitle());
+		var productRows = driver.findElements(
+				By.xpath("//table[@class='scGridTabela']/tbody/tr[not(@id='tit_boletim_completo__SCCS__1')]"));
+		log.info("Number of product rows in the page {}", productRows.size());
+		var infoProds = new ArrayList<InfoProduto>();
+		for (var row : productRows) {
+			var cells = row.findElements(By.xpath("./td/span"));
+			String name = "", embalagem = "", situacao = "";
+			Double pMin = 0.0, pCom = 0.0, pMax = 0.0;
+			for (var field : cells) {
+				var id = field.getDomProperty("id");
+				var val = field.getText();
+				if (id.contains("prdnom")) {
+					name = val;
+				} else if (id.contains("embdesresu")) {
+					embalagem = val;
+				} else if (id.contains("pboprcmin")) {
+					pMin = Double.parseDouble(val.replace(',', '.'));
+				} else if (id.contains("pboprccomum")) {
+					pCom = Double.parseDouble(val.replace(',', '.'));
+				} else if (id.contains("pboprcmax")) {
+					pMax = Double.parseDouble(val.replace(',', '.'));
+				} else if (id.contains("mersit")) {
+					situacao = val;
+				}
+			}
+			var infoProd = new InfoProduto(name, embalagem, pMin, pCom, pMax, situacao);
+			infoProds.add(infoProd);
+		}
+		log.info("Total number of InfoProducts objects created: {}", infoProds.size());
+		try {
+			var json = mapper.writeValueAsString(infoProds.get(0));
+			log.info("First product in the list of information: {}", json);
+		} catch (Exception e) {
+			log.error("Failed to serialize the first product in the list of information", e);
+		}
+		driver.quit();
+	}
+
+	record InfoProduto(String produto, String embalagem, Double precoMin, Double precoComum,
+			Double precoMax,
+			String situacao) {
+	}
 }
