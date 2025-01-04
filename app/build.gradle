@@ -8,6 +8,8 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
+    id 'org.graalvm.buildtools.native' version '0.10.4'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 repositories {
@@ -21,6 +23,7 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:2.1.0-alpha1'
     implementation 'org.seleniumhq.selenium:selenium-java:4.27.0'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
+    implementation 'io.javalin:javalin:6.4.0'
     // Use JUnit Jupiter for testing.
     testImplementation libs.junit.jupiter
 
@@ -28,6 +31,28 @@ dependencies {
 
     // This dependency is used by the application.
     implementation libs.guava
+}
+
+
+shadowJar {
+    manifest {
+        attributes(
+            'Main-Class': 'org.example.App' // Replace with your main class
+        )
+    }
+}
+
+// jar {
+//     manifest {
+//         attributes 'Main-Class': 'org.example.App'
+//     }
+// }
+
+graalvmNative {
+    binaries.all {
+        buildArgs.add("--enable-url-protocols=http")
+//        resources.autodetect()
+    }
 }
 
 // Apply a specific Java toolchain to ease working on different environments.

@@ -17,6 +17,10 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.javalin.Javalin;
+import io.javalin.http.ContentType;
+import io.javalin.json.JsonMapper;
+
 public class App {
 
 	private static final String FIRST_SELECT_EL_ID = "id_sc_field_mercado";
@@ -65,10 +69,13 @@ public class App {
 		wait.until(ExpectedConditions.titleContains("Data"));
 
 		log.info("Currently at page \"{}\"", driver.getTitle());
-		var productRows = driver.findElements(
-				By.xpath("//table[@class='scGridTabela']/tbody/tr[not(@id='tit_boletim_completo__SCCS__1')]"));
+		var locator = By.xpath("//table[@class='scGridTabela']/tbody/tr[not(@id='tit_boletim_completo__SCCS__1')]");
+		wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(locator, 0));
+		var productRows = driver.findElements(locator);
+
 		log.info("Number of product rows in the page {}", productRows.size());
 		var infoProds = new ArrayList<InfoProduto>();
+
 		for (var row : productRows) {
 			var cells = row.findElements(By.xpath("./td/span"));
 			String name = "", embalagem = "", situacao = "";
@@ -94,13 +101,15 @@ public class App {
 			infoProds.add(infoProd);
 		}
 		log.info("Total number of InfoProducts objects created: {}", infoProds.size());
-		try {
-			var json = mapper.writeValueAsString(infoProds.get(0));
-			log.info("First product in the list of information: {}", json);
-		} catch (Exception e) {
-			log.error("Failed to serialize the first product in the list of information", e);
-		}
 		driver.quit();
+
+		Javalin.create()
+				.get("/", ctx -> {
+					ctx
+							.contentType(ContentType.APPLICATION_JSON)
+							.json(infoProds.get(0));
+				})
+				.start(8080);
 	}
 
 	record InfoProduto(String produto, String embalagem, Double precoMin, Double precoComum,
