@@ -1,0 +1,37 @@
+@startuml
+' hide the spot
+' hide circle
+
+' avoid problems with angled crows feet
+skinparam linetype ortho
+
+entity "InformacaoProduto" as ip {
+  *id : number <<generated>>
+  *boletim_id: id <<foreign>>
+  --
+  nome: text
+  embalagem: text
+  preco_minimo: number
+  preco_comum: number
+  preco_maximo: number
+  situacao: number
+}
+
+entity "BoletimDiario" as bd {
+  *id : number <<generated>>
+  --
+  *mercado: id <<foreign>>
+  data: text
+}
+
+
+entity "Mercado" as m {
+  *id : number <<generated>>
+  --
+  sigla: varchar
+  regiao: varchar
+}
+
+ip }|--|| bd
+bd }|--|| m
+@enduml
